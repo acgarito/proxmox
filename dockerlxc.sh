@@ -3,18 +3,33 @@
 # Function to install necessary dependencies
 install_dependencies() {
     apt update
-    apt install -y lxc lxc-debian jq cifs-utils wget curl
+    apt install -y lxc jq cifs-utils wget curl lsb-release
 }
 
 # Function to pull the latest Debian LXC template
 pull_debian_template() {
     echo "Fetching the latest Debian LXC template..."
-    lxc-create -n dummy -t debian
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to pull the Debian LXC template."
+
+    # Check if LXC templates directory exists
+    if [ ! -d /usr/share/lxc/templates ]; then
+        echo "Error: LXC templates directory does not exist. Installing templates..."
+        mkdir -p /usr/share/lxc/templates
+    fi
+
+    # Try to download the Debian template manually if the local fetch fails
+    TEMPLATE_URL="https://github.com/lxc/lxc-ci/raw/master/templates/debian-11"
+    TEMPLATE_FILE="/usr/share/lxc/templates/lxc-debian"
+
+    # Download the template script
+    echo "Downloading Debian LXC template..."
+    wget -q $TEMPLATE_URL -O $TEMPLATE_FILE
+
+    # Check if the download was successful
+    if [ ! -f $TEMPLATE_FILE ]; then
+        echo "Error: Failed to download the Debian LXC template."
         exit 1
     fi
-    lxc-destroy -n dummy  # Clean up the dummy container
+
     echo "Debian LXC template fetched successfully!"
 }
 
