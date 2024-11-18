@@ -1,36 +1,38 @@
 #!/bin/bash
 
-# Function to install necessary dependencies
-install_dependencies() {
-    apt update
-    apt install -y lxc jq cifs-utils wget curl lsb-release
-}
+# Function to fetch the latest Debian LXC template (with auto-download if necessary)
+fetch_debian_template() {
+    TEMPLATE_DIR="/usr/share/lxc/templates"
+    TEMPLATE_NAME="debian"
+    
+    echo "Checking if the Debian LXC template is already installed..."
 
-# Function to pull the latest Debian LXC template
-pull_debian_template() {
-    echo "Fetching the latest Debian LXC template..."
+    # Check if the Debian template exists
+    if [ ! -f "$TEMPLATE_DIR/lxc-$TEMPLATE_NAME" ]; then
+        echo "Debian LXC template not found. Attempting to download it..."
+        
+        # Template download URL
+        TEMPLATE_URL="https://github.com/lxc/lxc-ci/raw/master/templates/debian-11"
+        
+        # Check if the templates directory exists
+        if [ ! -d "$TEMPLATE_DIR" ]; then
+            echo "Error: LXC templates directory does not exist. Creating directory..."
+            mkdir -p "$TEMPLATE_DIR"
+        fi
 
-    # Check if LXC templates directory exists
-    if [ ! -d /usr/share/lxc/templates ]; then
-        echo "Error: LXC templates directory does not exist. Installing templates..."
-        mkdir -p /usr/share/lxc/templates
+        # Download the template script
+        wget -q $TEMPLATE_URL -O "$TEMPLATE_DIR/lxc-$TEMPLATE_NAME"
+        
+        # Check if the download was successful
+        if [ ! -f "$TEMPLATE_DIR/lxc-$TEMPLATE_NAME" ]; then
+            echo "Error: Failed to download the Debian LXC template."
+            exit 1
+        fi
+
+        echo "Debian LXC template downloaded successfully!"
+    else
+        echo "Debian LXC template already installed."
     fi
-
-    # Try to download the Debian template manually if the local fetch fails
-    TEMPLATE_URL="https://github.com/lxc/lxc-ci/raw/master/templates/debian-11"
-    TEMPLATE_FILE="/usr/share/lxc/templates/lxc-debian"
-
-    # Download the template script
-    echo "Downloading Debian LXC template..."
-    wget -q $TEMPLATE_URL -O $TEMPLATE_FILE
-
-    # Check if the download was successful
-    if [ ! -f $TEMPLATE_FILE ]; then
-        echo "Error: Failed to download the Debian LXC template."
-        exit 1
-    fi
-
-    echo "Debian LXC template fetched successfully!"
 }
 
 # Function to create the LXC container
@@ -177,6 +179,5 @@ create_lxc_container() {
 }
 
 # Main script execution
-install_dependencies
-pull_debian_template
+fetch_debian_template
 create_lxc_container
